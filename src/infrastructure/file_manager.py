@@ -1,24 +1,18 @@
-from pathlib import Path as Path
+from datetime import datetime as Date
 import numpy as np
-import json
+import hashlib
+import orjson
 import os
 
 class FileManager():
-    def save(model: dict) -> dict:
+    def save_model(model: dict) -> dict:
         try:
-            name = "".join([c if (ord(c) > 96 and ord(c) < 123) or (ord(c) > 64 and ord(c) < 91) else "#" for c in str(model["name"])]) #c stands for char
-            folder_path = Path(f"{Path().resolve()}/models")
-            if not folder_path.is_dir():
-                os.mkdir(folder_path)
-            path = f"{folder_path}\\{name}_{model["created_at"]}.json"
-            model["name"] = name    
-            model["biases"] = list(model["biases"])
-            model["weights"] = list(model["weights"])
-            model["path"] = path
-            with open(path, "w") as f:
-                f.write(json.dumps(model, indent=2))
-            model["biases"] = np.array(model["biases"])
-            model["weights"] = np.array(model["weights"])
+            dir_path = os.path.join(os.path.dirname(__file__), "..\\..\\models")
+            if not os.path.exists(dir_path):
+                os.mkdir(dir_path)
+            model["path"] = f"{dir_path}\\{model["name"]}_{model["created_at"]}.json"
+            with open(model["path"], "w") as f:
+                f.write(orjson.dumps(model, option=orjson.OPT_INDENT_2).decode())
             exception = None
         except Exception as e:
             exception = e
@@ -28,11 +22,9 @@ class FileManager():
             "exception": exception
         }
     
-    def load(path: str) -> dict:
+    def load_model(path: str) -> dict:
         try:
-            model = json.load(open(path, "r"))
-            model["biases"] = np.array(model["biases"])
-            model["weights"] = np.array(model["weights"])
+            model = orjson.loads(open(path).read())
             exception = None
         except Exception as e:
             exception = e
@@ -41,11 +33,12 @@ class FileManager():
             "model": model if exception is None else {},
             "exception": exception
         }
-    def load_folder(folder_path: str) -> dict:
-        models = [] 
+    def load_models() -> dict:
         try:
-            for path in Path(folder_path).iterdir():
-                result = FileManager.load(path)
+            models = []
+            dir_path = os.path.join(os.path.dirname(__file__), "..\\..\\models")
+            for DirEntry in os.scandir(dir_path):
+                result = FileManager.load_model(DirEntry)
                 if result["status"]:
                     models.append(result["model"])
                 else:
@@ -58,7 +51,22 @@ class FileManager():
             "models": models if exception is None else [],
             "exception": exception
         }
-    def save_results(resutls: np.array) -> dict:
-        #implement sessions which will record the result of a forward pass, what model was used using id and name
-        #add ids to model .jsons
-        print("Not implemented")
+    def save_session(results: np.array, model: dict) -> dict:
+        session_id = ""
+        try:
+            time_now = Date.now() 
+            session_id = hashlib.md5(f"{model["id"]}+{time_now}".encode()).hexdigest()
+            dir_path = os.path.join(os.path.dirname(__file__), "..\\..\\sessions.csv")
+            payload = ""
+            if not os.path.exists(dir_path):
+               payload = "\"session_id\",\"model_id\",\"model_name\",\"results\",\"processed_at\"\n"
+            with open(dir_path, "a") as f:
+                f.write(payload + f"\"{session_id}\",\"{model["id"]}\",\"{model["name"] if model['name'] != "" else "Name empty"}\",\"{results}\",\"{time_now}\"\n")
+            exception = None
+        except Exception as e:
+            exception = e
+        return {
+            "status": True if exception is None else False,
+            "session_id": session_id if exception is None else None,
+            "exception": exception
+        }

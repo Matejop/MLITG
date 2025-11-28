@@ -1,11 +1,11 @@
 import os
 import numpy as np
-from mnist import load_data_wrapper
+from src.mnist import Mnist
 
 def save_preprocessed_data(filepath='./data/mnist_preprocessed.npz'):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-    training_data, validation_data, test_data = load_data_wrapper()
+    training_data, validation_data, test_data = Mnist.load_wrapped()
     
     train_x = np.array([x.flatten() for x, y in training_data])
     train_y = np.array([y.flatten() for x, y in training_data])

@@ -1,7 +1,8 @@
-from infrastructure.file_manager import FileManager as FM
+from file_manager import FileManager as FM
 from datetime import datetime as Date
 import random as rnd
 import numpy as np
+import hashlib
 
 class ModelShaper():
     def create(name = "", dimensions = [16, 16], bias_spread = 10) -> dict: 
@@ -15,15 +16,17 @@ class ModelShaper():
         for i in range(1, len(dimensions)):
             weights += [rnd.random() for _ in range(dimensions[i] * dimensions[i - 1])]
             biases += [rnd.randint(-bias_spread, bias_spread) for _ in range(dimensions[i])]
+        time_now = Date.now()
         model = {
-            "name": name,
-            "created_at": "".join(["-" if c == ":" else c for c in str(Date.now())]), #c stands for char
+            "name": "".join([c if (ord(c) > 96 and ord(c) < 123) or (ord(c) > 64 and ord(c) < 91) else "#" for c in name]), #c stands for char,
+            "id": hashlib.md5(f"{name}+{time_now}".encode()).hexdigest(),
+            "created_at": "".join(["-" if c == ":" else c for c in str(time_now)]), #c stands for char
             "path": "",
             "dimensions": dimensions,
             "biases": biases,
             "weights": weights
         }
-        return FM.save(model)
+        return FM.save_model(model)
     
     def to_matrices(model: dict) -> dict:
         dimensions = model["dimensions"]

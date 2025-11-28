@@ -124,12 +124,12 @@ class CLI():
                             if first_layer == "(X)" or first_layer == "X":
                                 layer_list = [rnd.random() for _ in range(model["dimensions"][0])]
                                 break
-                            else:
+                            else: #add check if len(first_layer) == len(model["dimensions"][0])
                                 layer_list = get_layer(first_layer, float)
                             if layer_list != []:
                                 break
                         output = Model.forward(layer_list, model["weights"], model["biases"])
-                        print(f"Model with name: {Model["name"]} output {output}")
+                        print(f"Model with name: {Model["name"]}\nOutput {output}")
                         #print and save all results
                         print("Not implemented yet")
                     break
@@ -156,7 +156,7 @@ class CLI():
                                 while True:
                                 #MR.forward_pass()
                                 #print and save results
-                                print("Not implemented yet")
+                                    print("Not implemented yet")
                                 break
                             print(f"Not one of the options. Your answer: {each}")
                     break

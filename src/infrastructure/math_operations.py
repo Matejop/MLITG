@@ -1,6 +1,6 @@
 import numpy as np
 
-class MathOperations: # in the future remove all exception raising
+class MathOperations: #TODO in the future remove all exception raising
     def matrix_x_vector(matrix, vector):
         M = np.array(matrix)
         v = np.array(vector)
