@@ -1,6 +1,6 @@
-import os
+from src.infrastructure.mnist import Mnist
 import numpy as np
-from src.mnist import Mnist
+import os
 
 def save_preprocessed_data(filepath='./data/mnist_preprocessed.npz'):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)

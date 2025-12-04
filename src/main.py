@@ -1,4 +1,3 @@
-from infrastructure.file_manager import FileManager as FM
 from CLI import CLI
 
 if __name__ == "__main__":
