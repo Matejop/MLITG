@@ -10,6 +10,8 @@ import gzip
 import numpy as np
 
 class Mnist:
+    #TODO refactor
+    #TODO add exception handling
     def load():
         """Return the MNIST data as a tuple containing the training data,
         the validation data, and the test data.
@@ -41,7 +43,7 @@ class Mnist:
         return (training_data, validation_data, test_data)
 
 
-    def load_wrapped(self):
+    def load_wrapped():
         """Return a tuple containing ``(training_data, validation_data,
         test_data)``. Based on ``load_data``, but the format is more
         convenient for use in our implementation of neural networks.
@@ -62,13 +64,13 @@ class Mnist:
         the training data and the validation / test data.  These formats
         turn out to be the most convenient for use in our neural network
         code."""
-        tr_d, va_d, te_d = self.load_data()
-        training_inputs = [np.reshape(x, (784, 1)) for x in tr_d[0]]
-        training_results = [self.vectorized_result(y) for y in tr_d[1]]
+        tr_d, va_d, te_d = Mnist.load()
+        training_inputs = [[np.reshape(x, (784, 1))] for x in tr_d[0]]
+        training_results = [[Mnist.vectorized_result(y)] for y in tr_d[1]]
         training_data = list(zip(training_inputs, training_results))
-        validation_inputs = [np.reshape(x, (784, 1)) for x in va_d[0]]
+        validation_inputs = [[np.reshape(x, (784, 1))] for x in va_d[0]]
         validation_data = list(zip(validation_inputs, va_d[1]))
-        test_inputs = [np.reshape(x, (784, 1)) for x in te_d[0]]
+        test_inputs = [[np.reshape(x, (784, 1))] for x in te_d[0]]
         test_data = list(zip(test_inputs, te_d[1]))
         return (training_data, validation_data, test_data)
 
