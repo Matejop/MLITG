@@ -7,17 +7,25 @@ import hashlib
 import orjson
 import os
 
+FOLDER_PATH = os.path.join(os.path.dirname(__file__), "..\\models")
+
 class Model:    
     #TODO add important parameters/constants to global config
     @overload
-    def __init__(self, dimensions = None, bias_spread = 10, seed = "0") -> dict:
+    def __init__(self, dimensions = None, bias_spread = 10, seed = "0"):
         rnd.seed(seed)
-        dimensions = dimensions if dimensions != None else [16, 16]
+        if dimensions == None:
+            dimensions = [16, 16]
+        else:
+            for x in dimensions:
+                if x < 1: 
+                    dimensions = [16, 16]
+                    break
         dimensions.append(10)
         dimensions.insert(0, 784)
         self.created_at = Date.now
         self.id = hashlib.md5(f"{"ITG"}+{self.created_at}".encode()).hexdigest()
-        self.path = f"{os.path.join(os.path.dirname(__file__), "..\\models")}\\{self.id}_{self.created_at}.json"
+        self.path = f"{FOLDER_PATH}\\{self.id}_{self.created_at}.json"
         self.dimensions = dimensions
         self.biases = [None * (len(self.dimensions) - 1)]
         self.weights = [None * (len(self.dimensions) - 1)]
@@ -30,10 +38,11 @@ class Model:
         if not result["status"]:
             self.path = ""
             print(result["exception"])
+            return Model() 
+        return self
         
-
     @overload
-    def __init__(self, path: str) -> dict:
+    def __init__(self, path: str):
         self.id = None
         self.created_at = None
         self.path = None
@@ -50,6 +59,17 @@ class Model:
             self.weights = result["model"]["weights"]
         else:
             print(result["exception"])
+            return Model()
+        return self
+
+    def __init__(self):
+        self.id = None
+        self.created_at = None
+        self.path = None
+        self.dimensions = None
+        self.biases = None
+        self.weights = None
+        return self
             
     def fit(self, data: tuple) -> dict:
         """
@@ -69,7 +89,7 @@ class Model:
             "exceptions": exception
         }
     
-    def forward(self, activations: list, layer_index = 0) -> Session:
+    def infer(self, activations: list, layer_index = 0) -> Session:
         #TODO add softmax to final layer
         """
         Forward pass

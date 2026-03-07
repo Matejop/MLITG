@@ -1,11 +1,11 @@
+from typing import List
+
 class MathOperations:
     #TODO add important parameters/constants to global config
-    #TODO in the future remove all exception raising
-    #TODO define returns and parameters better
-    #TODO add softmax and cross entropy¨
-    #TODO refactor vector addition and matrix_x_vector
-    def matrix_x_vector(matrix, vector):
-        if len(matrix[0]) != len(vector):
+    #TODO remove all exception raising after Model.fit() is finished
+
+    def matrix_x_vector(matrix: List[list], vector: list):
+        if len(matrix) != len(vector):
             raise ValueError("Length is not compatible")
 
         result = []
@@ -16,56 +16,45 @@ class MathOperations:
             result.append(partialSum)
         return result
 
-    def vector_addition(u, v):
+    def vector_addition(u: list, v: list):
         if len(u) != len(v):
             raise ValueError("Vectors must have the same length")
-        resultVector = []
         for i in range(len(u)):
-            resultVector.append(u[i] + v[i])
-        return resultVector
+            u[i] += v[i]
+        return u
 
-    def factorial(n):
+    def factorial(input: int):
         fact = 1
-        for i in range(1, n + 1):
+        for i in range(1, input + 1):
             fact *= i
         return fact
-    def exp(x):
+    
+    def taylor_exp(base: int):
         e = 0
         for i in range(10): # accuracy - keep the number even
-            e += x**i/MathOperations.factorial(i)
-        return e
-    def sigmoid(x): # 5 digit accuracy
-        if(x >= 0):
-            return 1-1/(MathOperations.exp(x)+1)
+            e += base**i/MathOperations.factorial(i)
+        return e 
+        
+    def taylor_ln(input: float, sum_bound = 200):
+        a = 0.55 #TODO add explaination for picking 0.55 not only that it works
+        result = -0.597837000756 #offset constant = ln(a)
+        for k in range(1, sum_bound + 1):
+            result += ((-1)**(k - 1)) * ((input - a)**k) / (k * a ** k)
+        return result
+    
+    def sigmoid(input: float): # 5 digit accuracy
+        if(input >= 0):
+            return 1-1/(MathOperations.taylor_exp(input)+1)
         else:
-            return 1/(MathOperations.exp(-x)+1)
-    def cost_function(answer_vector, correct_vector):
-        """
-        answer_vector (forward pass): last layer of results (0-9) where for example [0.1, 0.45, ...], uncorrected result of nn, correct_vector: ideal anwser (pure 1)
-        """
-        if (len(answer_vector) == len(correct_vector)):
-            result = 0
-            for i in range(len(answer_vector)):
-                difference = correct_vector[i] - answer_vector[i]
-                result += difference * difference
-            return result
-        return ValueError
-    def soft_max(vector):
+            return 1/(MathOperations.taylor_exp(-input)+1)
+        
+    def softmax(vector: list):
         sum = 0
         for element in vector:
-            sum += MathOperations.exp(element)
+            sum += MathOperations.taylor_exp(element)
         for i in range(len(vector)):
-            vector[i] = MathOperations.exp(vector[i]) / sum
-
+            vector[i] = MathOperations.taylor_exp(vector[i]) / sum
         return vector
-    def taylor_ln(x, n):
-        a = 0.55
-        result = -0.597837000756
-        for k in range(1, n + 1):
-            result += ((-1) * (k - 1)) * ((x - a)**k) / (k * a ** k)
-        return result
-
-    def cross_entropy(vector, index):
-        vector[index]
-
-
+    
+    def cross_entropy(vector: list, index: int):
+        return -1 * MathOperations.taylor_ln(vector[index])
