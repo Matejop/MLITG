@@ -5,7 +5,7 @@ import os
 #TODO add filepaths to global config
 def preprocess_data(filepath="./data/preprocessed/mnist_preprocessed.npz"):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    training_data, validation_data, test_data = load_raw_data()
+    training_data, validation_data, test_data = load_raw_data("./mnist_new.pkl.gz")
     training_answers = []
     validation_answers = []
     test_answers = []
