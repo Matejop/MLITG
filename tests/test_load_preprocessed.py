@@ -1,15 +1,28 @@
-from mnist_preprocess import load_preprocessed_data
 import matplotlib.pyplot as plt
+import numpy as np
 
-train, val, test = load_preprocessed_data()
+filepath="./data/preprocessed/mnist_preprocessed.npz"
+data = np.load(filepath)
+training_data = list(zip(
+    [x.reshape((784,1)) for x in data['train_x']],
+    [y.reshape((10,1)) for y in data['train_y']]
+))
+validation_data = list(zip(
+    [x.reshape((784,1)) for x in data['val_x']],
+    data['val_y']
+))
+test_data = list(zip(
+    [x.reshape((784,1)) for x in data['test_x']],
+    data['test_y']
+))
 
-example_train = train[201] # You can choose any (in range ofc)
-example_val = val[0]
-example_test = test[0]
+example_train = training_data[0] # You can choose any (in range ofc)
+example_val = validation_data[0]
+example_test = test_data[0]
 
-print(f"Train data size: {len(train)}")
-print(f"Validation data size: {len(val)}")
-print(f"Test data size: {len(test)}")
+print(f"Train data size: {len(training_data)}")
+print(f"Validation data size: {len(validation_data)}")
+print(f"Test data size: {len(test_data)}")
 
 print(f"First training input shape: {example_test[0].shape}")
 print(f"First training label shape: {example_test[1].shape}")

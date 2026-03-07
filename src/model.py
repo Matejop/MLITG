@@ -8,6 +8,7 @@ import orjson
 import os
 
 class Model:    
+    #TODO add important parameters/constants to global config
     @overload
     def __init__(self, dimensions = None, bias_spread = 10, seed = "0") -> dict:
         rnd.seed(seed)

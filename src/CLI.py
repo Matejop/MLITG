@@ -1,7 +1,7 @@
 from datetime import datetime as Date
 from session import Session
 from model import Model
-from mnist import Mnist
+from data_loader import Loader
 import random as rnd
 import hashlib
 import time
@@ -61,7 +61,7 @@ class CLI():
         hidden_layers = []
         bias_spread = []
         seed = float('nan')
-        data = Mnist.load_wrapped() #TODO factor in exception handling when it is created
+        data = Loader.load_data() #TODO factor in exception handling when it is created
         while True:
             print("Do you wish to use default initialization? (Y/N)")
             default = input().strip()

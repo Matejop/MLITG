@@ -1,6 +1,6 @@
-import os
 import subprocess
 import sys
+import os
 
 def run(command):
     print(f"🟡 Running: {command}")
@@ -8,21 +8,21 @@ def run(command):
 
 def main():
     # 1. Create virtual python environment
-    if not os.path.isdir("neuronkyEnv"):
+    if not os.path.isdir("env"):
         print("🧪 Creating virtual environment...")
-        run(f"{sys.executable} -m venv neuronkyEnv")
+        run(f"{sys.executable} -m venv env")
     else:
         print("✅ Virtual environment already exists.")
 
     # 2. Activate venv + install requirements
-    pip_path = os.path.join("neuronkyEnv", "Scripts", "pip.exe") if os.name == "nt" else os.path.join("neuronkyEnv", "bin", "pip")
+    pip_path = os.path.join("env", "Scripts", "pip.exe") if os.name == "nt" else os.path.join("env", "bin", "pip")
     print("📦 Installing requirements...")
     run(f"{pip_path} install -r requirements.txt")
 
     # 3. Run data deserialization + preprocess
     print("🧹 Preprocessing MNIST data...")
-    python_path = os.path.join("neuronkyEnv", "Scripts", "python.exe") if os.name == "nt" else os.path.join("neuronkyEnv", "bin", "python")
-    run(f"{python_path} mnist_preprocess.py")
+    python_path = os.path.join("env", "Scripts", "python.exe") if os.name == "nt" else os.path.join("env", "bin", "python")
+    run(f"{python_path} data_preprocess.py")
 
     print("✅ All done! You can now start with your neural network 🚀")
 

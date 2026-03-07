@@ -1,4 +1,5 @@
 class MathOperations:
+    #TODO add important parameters/constants to global config
     #TODO in the future remove all exception raising
     #TODO define returns and parameters better
     #TODO add softmax and cross entropy¨
