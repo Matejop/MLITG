@@ -5,11 +5,15 @@ and ``load_data_wrapper``.  In practice, ``load_data_wrapper`` is the
 function usually called by our neural network code.
 """
 
-import numpy as np
+import orjson
+import gzip
+import os
+
+DATA_PATH = os.path.join("data", "preprocessed", "mnist_preprocessed.gz")
 
 class Loader:
     #TODO add filepath to global config
-    def load_data(filepath="./data/preprocessed/mnist_preprocessed.npz"):
+    def load_data(filepath=DATA_PATH):
         """Return a tuple containing ``(training_data, validation_data,
         test_data)``. Based on ``load_data``, but the format is more
         convenient for use in our implementation of neural networks.
@@ -30,17 +34,18 @@ class Loader:
         the training data and the validation / test data.  These formats
         turn out to be the most convenient for use in our neural network
         code."""
-        data = np.load(filepath)
+
+        data = orjson.loads(gzip.open(filepath).read())     
         training_data = list(zip(
-            [x.reshape((784,1)) for x in data['train_x']],
-            [y.reshape((10,1)) for y in data['train_y']]
+            data["training_x"],
+            data["training_y"]
         ))
         validation_data = list(zip(
-            [x.reshape((784,1)) for x in data['val_x']],
-            data['val_y']
+            data['validation_x'],
+            data['validation_y']
         ))
         test_data = list(zip(
-            [x.reshape((784,1)) for x in data['test_x']],
-            data['test_y']
+            data['testing_x'],
+            data['testing_y']
         ))
         return (training_data, validation_data, test_data)

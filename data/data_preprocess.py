@@ -1,30 +1,56 @@
-import numpy as np
 import pickle
+import orjson
 import gzip
 import os
+
 #TODO add filepaths to global config
-def preprocess_data(filepath="./data/preprocessed/mnist_preprocessed.npz"):
+
+RAW_PATH = os.path.join("data", "raw", "mnist_new.pkl.gz")
+PREPROCESSED_PATH = os.path.join("data", "preprocessed", "mnist_preprocessed.gz")
+
+
+def preprocess_data(filepath = PREPROCESSED_PATH):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    training_data, validation_data, test_data = load_raw_data("./mnist_new.pkl.gz")
+    training_data, validation_data, test_data = load_raw_data()
+    training_input = []
     training_answers = []
+    validation_input = []
     validation_answers = []
+    test_input = []
     test_answers = []
     for i in range(len(training_data[0])):
-        training_data[0][i] = training_data[0][i].flatten()
+        training_input.append(training_data[0][i].flatten().tolist())
+        for j in range(len(training_input[-1])):
+            training_input[-1][j] = float(training_input[-1][j])
         training_answers.append(vectorized_result(training_data[1][i]))
     for i in range(len(validation_data[0])):
-        validation_data[0][i] = validation_data[0][i].flatten()
+        validation_input.append(validation_data[0][i].flatten().tolist())
+        for j in range(len(validation_input[-1])):
+            validation_input[-1][j] = float(validation_input[-1][j])
         validation_answers.append(vectorized_result(validation_data[1][i]))
     for i in range(len(test_data[0])):         
-        test_data[0][i] = test_data[0][i].flatten()
+        test_input.append(test_data[0][i].flatten().tolist())
+        for j in range(len(test_input[-1])):
+            test_input[-1][j] = float(test_input[-1][j])
         test_answers.append(vectorized_result(test_data[1][i]))
-    np.savez_compressed(filepath,
-                        train_x=np.array(training_data[0]), train_y=np.array(training_answers),
-                        val_x=np.array(validation_data[0]), val_y=np.array(validation_answers),
-                        test_x=np.array(test_data[0]), test_y=np.array(test_answers))
+    
+    data_dict = {
+        "training_x": training_input,
+        "training_y": training_answers,
+        "validation_x": validation_input,
+        "validation_y": validation_answers,
+        "testing_x": test_input,
+        "testing_y": test_answers,
+    }
+
+    with gzip.open(filepath, "w") as f:
+        f.write(orjson.dumps(
+            data_dict, 
+            option=orjson.OPT_INDENT_2)
+        )
     print(f"Data saved to {os.path.abspath(filepath)}")
 
-def load_raw_data(filepath = "./data/raw/mnist.pkl.gz"):
+def load_raw_data(filepath = RAW_PATH):
     """Return the MNIST data as a tuple containing the training data,
     the validation data, and the test data.
 
@@ -58,9 +84,12 @@ def vectorized_result(j):
     position and zeroes elsewhere.  This is used to convert a digit
     (0...9) into a corresponding desired output from the neural
     network."""
-    e = np.zeros((10, 1))
-    e[j] = 1.0
+    e = []
+    for i in range(10):
+        e.append(0.0 if i != j else 1.0)
     return e
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    RAW_PATH = os.path.join("raw", "mnist_new.pkl.gz")
+    PREPROCESSED_PATH = os.path.join("preprocessed", "mnist_preprocessed.npz")
     preprocess_data()

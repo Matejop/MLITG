@@ -2,6 +2,12 @@ import subprocess
 import sys
 import os
 
+#TODO add filepaths to global config
+
+PIP_PATH = os.path.join("env", "Scripts", "pip.exe") if os.name == "nt" else os.path.join("env", "bin", "pip")
+PYTHON_PATH = os.path.join("env", "Scripts", "python.exe") if os.name == "nt" else os.path.join("env", "bin", "python")
+PREPROCESS_SCRIPT_PATH = os.path.join("data", "data_preprocess.py")
+
 def run(command):
     print(f"🟡 Running: {command}")
     subprocess.run(command, shell=True, check=True)
@@ -15,14 +21,12 @@ def main():
         print("✅ Virtual environment already exists.")
 
     # 2. Activate venv + install requirements
-    pip_path = os.path.join("env", "Scripts", "pip.exe") if os.name == "nt" else os.path.join("env", "bin", "pip")
     print("📦 Installing requirements...")
-    run(f"{pip_path} install -r requirements.txt")
+    run(f"{PIP_PATH} install -r requirements.txt") #subprocess.run does not work without the use of os.path
 
     # 3. Run data deserialization + preprocess
     print("🧹 Preprocessing MNIST data...")
-    python_path = os.path.join("env", "Scripts", "python.exe") if os.name == "nt" else os.path.join("env", "bin", "python")
-    run(f"{python_path} data_preprocess.py")
+    run(f"{PYTHON_PATH} {PREPROCESS_SCRIPT_PATH}") #subprocess.run does not work without the use of os.path
 
     print("✅ All done! You can now start with your neural network 🚀")
 

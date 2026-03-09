@@ -9,3 +9,4 @@ setuptools
 six
 typing
 wheel
+h5py

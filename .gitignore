@@ -9,4 +9,4 @@ src/__pycache__/
 .env
 data/preprocessed/
 models/
-sessions.csv
+sessions/
