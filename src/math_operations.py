@@ -27,8 +27,6 @@ class MathOperations:
         e = 0
         for i in range(10): # accuracy - keep the number even
             e += input**i/MathOperations.factorial(i)
-        print(e)
-        print("taylor_exp")
         return e 
         
     def taylor_ln(input: float, sum_bound = 200) -> float:
@@ -39,13 +37,9 @@ class MathOperations:
         return result
     
     def sigmoid(input: float) -> float: # 5 digit accuracy
-        if(input >= 0):
-            print(1-1/(MathOperations.taylor_exp(input)+1))
-            print("sigmoid")
+        if (input >= 0):
             return 1-1/(MathOperations.taylor_exp(input)+1)
         else:
-            print(1/(MathOperations.taylor_exp(-input)+1))
-            print("sigmoid")
             return 1/(MathOperations.taylor_exp(-input)+1)
         
     def softmax(vector: List[float]) -> List[float]:
@@ -56,5 +50,6 @@ class MathOperations:
             vector[i] = MathOperations.taylor_exp(vector[i]) / sum
         return vector
     
-    def cross_entropy(vector: List[float], index: int) -> float:
-        return -1 * MathOperations.taylor_ln(vector[index])
+    def cross_entropy(vector: List[float], index: int) -> list:
+        vector[index] = -1 * MathOperations.taylor_ln(vector[index])
+        return vector

@@ -1,7 +1,7 @@
 from datetime import datetime as Date
-from session import Session
-from model import Model
-from data_loader import Loader
+from data_manager import Loader
+from objects.session import Session
+from objects.model import Model
 import random as rnd
 import hashlib
 import time

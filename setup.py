@@ -24,10 +24,6 @@ def main():
     print("📦 Installing requirements...")
     run(f"{PIP_PATH} install -r requirements.txt") #subprocess.run does not work without the use of os.path
 
-    # 3. Run data deserialization + preprocess
-    print("🧹 Preprocessing MNIST data...")
-    run(f"{PYTHON_PATH} {PREPROCESS_SCRIPT_PATH}") #subprocess.run does not work without the use of os.path
-
     print("✅ All done! You can now start with your neural network 🚀")
 
 if __name__ == "__main__":
