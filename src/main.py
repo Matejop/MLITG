@@ -1,6 +1,6 @@
 #from CLI import CLI
 from data_manager import Manager
-from paramaters.weights import Weights
+from objects.paramaters.weights import Weights
 from objects.model import Model
 
 if __name__ == "__main__":

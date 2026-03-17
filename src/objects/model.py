@@ -1,6 +1,6 @@
 from math_operations import MathOperations as MO
-from paramaters.biases import Biases
-from paramaters.weights import Weights
+from parameters.biases import Biases
+from parameters.weights import Weights
 from data_manager import Manager
 from datetime import datetime as Date
 from copy import copy, deepcopy
@@ -15,8 +15,6 @@ class Model:
     #TODO add important parameters/constants to global config
     #Model initialization, infrastructure and object handling will be moved to a different branch once a model is trained
 
-    models = {}
-
     def __init__(self):
         self.id = None
         self.created_at = self.created_at = Date.now().__str__()
@@ -26,64 +24,44 @@ class Model:
         self.weights = None
     
     @classmethod
-    def from_dimensions(cls, dimensions: List[float], bias_spread = 10, seed = "0"):
-        dimensions = deepcopy(dimensions)
-        for i in range(len(dimensions)):
-            if dimensions[i] < 1:
-                print("Dimensions incorrectly defined - model not created")
-                print(dimensions)
-                return cls()
+    def __from_dimensions(cls, starting_dimensions: List[float], bias_spread = 10, seed = "0"):
         self = cls()
         self.id = hashlib.md5(f"{"ITG"}+{self.created_at}".encode()).hexdigest()
         self.path = os.path.join(FOLDER_PATH, f"{self.id}.json")
-        self.dimensions = dimensions
+        self.dimensions = deepcopy(starting_dimensions)
         self.biases = Biases.from_dimensions(self.dimensions, seed, bias_spread)
         self.weights = Weights.from_dimensions(self.dimensions, seed, False)
         result = self.__save()
         if result["status"]:
-            Model.models[self.id] = copy(self)
             return self
         else:
             print(result["exception"])
             return cls()
     
     @classmethod
-    def from_path(cls, path: str):
-        self = cls()
-        result = self.__load(path)
-        if result["status"]:
-            Model.models[self.id] = copy(self)
-        else:
-            print(result["exception"])            
-        return self
-    
-    @classmethod
-    def from_id(cls, model_id: str):
-        return Model.models.get(model_id, cls())
-            
-    def fit(self, data: tuple, batch_size: int = 100, shift_factor: float = 1) -> dict:
+    def fit(cls, data: tuple, batch_size: int = 100, gradient_factor: float = 1, shift_factor: float = 0.9, starting_dimensions: List[int] = None, bias_spread = 10, seed = "0") -> dict:
         """
-        shift_factor is the gradient factor
         trains the model and saves it to local
         """
+        #add wrong input handling
+        self = cls.__from_dimensions(starting_dimensions if not None else [784, 16, 16, 10], bias_spread, seed)
         training_data, validation_data, testing_data = data
         training_data = Manager.make_batches(training_data, batch_size)
         biases_stencil = Biases.from_dimensions(self.dimensions)
         weights_stencil = Weights.from_dimensions(self.dimensions)
-        for batch in training_data:
+        for i in len(range(training_data)):
             biases_desired_shift = biases_stencil
             weights_desired_shift = weights_stencil            
-            for i in range(len(batch)):
-                activations = self.__forward(training_data[0][i], [])
-                loss = MO.cross_entropy(activations.pop(), batch[i]) #applying loss function to the last layer
-                loss[batch[i]] = loss[batch[i]] - 1 #delta for the last last layer
+            for j in range(len(training_data[i])):
+                activations = self.__forward(training_data[i][j][0], [])
+                loss = MO.cross_entropy(activations.pop(), training_data[i][j][1]) #applying loss function to the last layer
+                loss[training_data[i][j][1]] = loss[training_data[i][j][1]] - 1 #delta for the last last layer
                 biases_desired_shift, weights_desired_shift = self.__back_propagation(activations, loss, biases_desired_shift, weights_desired_shift)
-            for i in range(len((self.dimensions))):
-                bias_shift = MO.vector_scalar_product(biases_desired_shift[i], shift_factor / len(batch))  #calculating the average shift and factoring in shift factor to change learning rate
-                self.biases[i] = MO.vector_addition(biases_desired_shift[i], bias_shift)
-                for j in range(len(weights_desired_shift[i])):
-                    weight_shift = MO.vector_scalar_product(weights_desired_shift[i][j], shift_factor / len(batch)) #calculating the average shift and factoring in shift factor to change learning rate
-                    self.weights[i][j] = MO.vector_addition(self.weights[i][j], weight_shift)
+            for j in range(len((self.dimensions))): #calculating the average shift and factoring in shift factor to change learning rate
+                self.biases[j] = MO.vector_addition(self.biases[j], MO.vector_scalar_product(biases_desired_shift[j], (gradient_factor / len(training_data[i][0])) * shift_factor))
+                for k in range(len(weights_desired_shift[j])):
+                    self.weights[j][k] = MO.vector_addition(self.weights[j][k], MO.vector_scalar_product(weights_desired_shift[j][k], (gradient_factor / len(training_data[i][0])) * shift_factor))
+            shift_factor *= shift_factor
         #Add optimizing using validation data
         #Compare false positives, true positives, false negatives and true negatives using testing data
         result = self.__save()
@@ -181,7 +159,7 @@ class Model:
                 os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, "w") as f:
                 f.write(orjson.dumps(
-                    self.__dict__, 
+                    model_dict, 
                     option=orjson.OPT_INDENT_2).decode()
                 )
         except Exception as e:

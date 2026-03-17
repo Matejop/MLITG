@@ -1,12 +1,4 @@
+orjson
+typing
 matplotlib
 numpy
-orjson
-packaging
-pillow
-pyparsing
-python-dateutil
-setuptools
-six
-typing
-wheel
-h5py

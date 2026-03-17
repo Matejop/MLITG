@@ -1,5 +1,5 @@
 from datetime import datetime as Date
-from data_manager import Loader
+from data_manager import Manager
 from objects.session import Session
 from objects.model import Model
 import random as rnd
