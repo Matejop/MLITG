@@ -1,21 +1,74 @@
-from typing import List
+from typing import List, Tuple
 
 class MathOperations:
     #TODO add important parameters/constants to global config
 
-    def matrix_x_vector(matrix: List[List[float]], vector: List[float]) -> List[float]:
+    #vector matrix operations
+
+    #def transpose_matrix(m: List[List[float]]) -> List[List[float]]:
+    #    x_len = len(m)
+    #    y_len = len(m[0])
+    #    transposed_m = []
+    #    for i in range(y_len):
+    #        transposed_m.append([])
+    #        for j in range(x_len):
+    #            transposed_m[i].append(m[j][i])
+    #    return transposed_m
+
+    def update_matrix(u: List[float], m: List[List[float]], t_map: List[List[Tuple[int, int]]] = None) -> List[List[float]]:
+        if t_map == None:
+            for i in range(len(m)):
+                for j in range(len(m[0])):
+                    m[i][j] *= u[j]
+        else:
+            for i in range(len(t_map)):
+                for j in range(len(t_map[0])):
+                    x, y = t_map[i][j]
+                    m[x][y] *= u[j] 
+        return m
+    
+    def vector_matrix_product(u: List[float], m: List[List[float]], t_map: List[List[Tuple[int, int]]] = None) -> List[float]:
         result = []
-        for i in range(len(matrix)):
-            partialSum = 0
-            for j in range(len(matrix[0])):
-                partialSum += matrix[i][j] * vector[j]
-            result.append(partialSum)
+        if t_map == None:
+            for i in range(len(m)):
+                partialSum = 0
+                for j in range(len(m[0])):
+                    partialSum += m[i][j] * u[j]
+                result.append(partialSum)
+        else:
+            for i in range(len(t_map)):
+                partialSum = 0
+                for j in range(len(t_map[0])):
+                    x, y = t_map[i][j] 
+                    partialSum += m[x][y] * u[j]
+                result.append(partialSum)
         return result
+
+    #vector only operations
+
+    def vector_scalar_product(u: list, scalar: float):
+        for i in range(len(u)):
+            u[i] *= scalar
+        return u
 
     def vector_addition(u: List[float], v: List[float]) -> List[float]:
         for i in range(len(u)):
             u[i] += v[i]
         return u
+
+    def softmax(u: List[float]) -> List[float]:
+        sum = 0
+        for element in u:
+            sum += MathOperations.taylor_exp(element)
+        for i in range(len(u)):
+            u[i] = MathOperations.taylor_exp(u[i]) / sum
+        return u
+    
+    def cross_entropy(u: List[float], index: int) -> list:
+        u[index] = -1 * MathOperations.taylor_ln(u[index])
+        return u
+    
+    #maths operations
 
     def factorial(input: int) -> int:
         fact = 1
@@ -41,15 +94,3 @@ class MathOperations:
             return 1-1/(MathOperations.taylor_exp(input)+1)
         else:
             return 1/(MathOperations.taylor_exp(-input)+1)
-        
-    def softmax(vector: List[float]) -> List[float]:
-        sum = 0
-        for element in vector:
-            sum += MathOperations.taylor_exp(element)
-        for i in range(len(vector)):
-            vector[i] = MathOperations.taylor_exp(vector[i]) / sum
-        return vector
-    
-    def cross_entropy(vector: List[float], index: int) -> list:
-        vector[index] = -1 * MathOperations.taylor_ln(vector[index])
-        return vector
