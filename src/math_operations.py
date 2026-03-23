@@ -5,16 +5,6 @@ class MathOperations:
 
     #vector matrix operations
 
-    #def transpose_matrix(m: List[List[float]]) -> List[List[float]]:
-    #    x_len = len(m)
-    #    y_len = len(m[0])
-    #    transposed_m = []
-    #    for i in range(y_len):
-    #        transposed_m.append([])
-    #        for j in range(x_len):
-    #            transposed_m[i].append(m[j][i])
-    #    return transposed_m
-
     def update_matrix(u: List[float], m: List[List[float]], t_map: List[List[Tuple[int, int]]] = None) -> List[List[float]]:
         if t_map == None:
             for i in range(len(m)):
@@ -91,6 +81,35 @@ class MathOperations:
     
     def sigmoid(input: float) -> float: # 5 digit accuracy
         if (input >= 0):
-            return 1-1/(MathOperations.taylor_exp(input)+1)
+            return 1 - 1 / (MathOperations.taylor_exp(input)+1)
         else:
-            return 1/(MathOperations.taylor_exp(-input)+1)
+            return 1 / (MathOperations.taylor_exp(-input)+1)
+    
+    def round(input: float, down: bool = True):
+        rounded = 0
+        if input * -1 < 0:
+            if down:
+                while rounded < input:
+                    rounded += 1
+                if rounded != input:
+                    rounded -= 1
+            else:
+                while rounded < input:
+                    rounded += 1            
+        else:
+            if down:
+                while rounded > input:
+                    rounded -= 1
+                if rounded != input:
+                    rounded -= 1
+            else:
+                while rounded > input:
+                    rounded -= 1
+        return rounded
+    
+    def max(input: List[float]):
+        max = -1
+        for element in input:
+            if element > max:
+                max = element
+        return max

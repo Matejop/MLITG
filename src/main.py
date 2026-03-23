@@ -1,11 +1,10 @@
 #from CLI import CLI
 from data_manager import Manager
-from objects.paramaters.weights import Weights
 from objects.model import Model
 
 if __name__ == "__main__":
-    #data = Manager.load_data()
-    Weights.from_dimensions([784, 16, 16, 10], "0", False)
+    data = Manager.load_data()
+    model, testing_result = Model.fit(data, 784, 10)
 
     #model = Model.from_dimensions([784, 16, 16, 10])
     #model.fit(data) 

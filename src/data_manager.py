@@ -5,6 +5,7 @@ and ``load_data_wrapper``.  In practice, ``load_data_wrapper`` is the
 function usually called by our neural network code.
 """
 
+from math_operations import MathOperations as MO
 from typing import Tuple, List
 import orjson
 import gzip
@@ -31,16 +32,13 @@ class Manager:
         return (training_data, validation_data, test_data)
     
     def make_batches(training_data: List[Tuple[List[float], int]], batch_size: int) -> List[List[Tuple[List[float], int]]]:
-        length_ratio = 0
         if batch_size < 1:
             print("Batch size incorrectly defined - batches not created")
             print(batch_size)
             return []
-        while length_ratio < len(training_data) / batch_size:
-            length_ratio += 1
-        length_ratio -= 1
+        batch_count = MO.round(len(training_data) / batch_size)
         batched_data = []
-        for i in range(length_ratio):
+        for i in range(batch_count):
             slice_start = i * batch_size
             slice_end = (i + 1) * batch_size
             if slice_end > len(training_data):

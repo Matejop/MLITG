@@ -30,7 +30,7 @@ class Session():
         self.activations = activations
         self.zeds = zeds
         result = self.__save()
-        if not result["status"]:
+        if result["status"] == False:
             print(result["exception"])
             self = Session()
         return self
@@ -46,7 +46,7 @@ class Session():
         self.model_id = model_id
         self.final_layer = final_layer
         result = self.__save()
-        if not result["status"]:
+        if result["status"] == False:
             print(result["exception"])
             self = Session()
         return self
@@ -54,7 +54,7 @@ class Session():
     def __save(self) -> dict:
         exception = None
         try:
-            if not os.path.exists(self.path):
+            if os.path.exists(self.path) == False:
                 os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, "w") as f:
                 print(self.__dict__)
