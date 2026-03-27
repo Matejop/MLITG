@@ -13,7 +13,7 @@ import os
 
 DATA_PATH = os.path.join("data", "mnist_preprocessed.gz")
 
-class Manager:
+class DataManager:
     #TODO add filepath to global config
     def load_data(filepath=DATA_PATH) -> Tuple[List[Tuple[List[float], int]]]:
         data = orjson.loads(gzip.open(filepath).read())

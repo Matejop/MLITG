@@ -1,4 +1,5 @@
 from typing import List, Tuple
+from objects.ratio import Ratio
 
 class MathOperations:
     #TODO add important parameters/constants to global config
@@ -60,6 +61,43 @@ class MathOperations:
     
     #maths operations
 
+    def add(x: Ratio, y: Ratio) -> Ratio:
+        common_denominator = x.denominator * y.denominator
+        x.numerator = (x.numerator * y.denominator) + (y.numerator * x.denominator)
+        x.denominator = common_denominator
+        x.reduce()
+        return x
+
+    def multiply(x: Ratio, y: Ratio) -> Ratio:
+        x.numerator *= y.numerator
+        x.denominator *= y.denominator
+        x.reduce()
+        return x
+        
+    def divide(x: Ratio, y: Ratio) -> Ratio:
+        y.denominator += y.numerator
+        y.numerator = y.denominator - y.numerator
+        y.denominator -= y.numerator
+        return MathOperations.multiply(x, y)
+
+    def raise_to_int(x: Ratio, y: int) -> Ratio:
+        x.denominator **= y
+        x.numerator **= y
+        x.reduce()
+        return x
+    
+    def squareroot(x: Ratio, y: int) -> Ratio:
+        for i in range(1, y):
+            j = 1
+            root = Ratio(j, i)
+            while():
+
+            
+    def raise_to_ratio(x: Ratio, y: Ratio) -> Ratio:
+        if y.denominator == 1:
+            return MathOperations.raise_to_int(x, y.numerator)
+
+
     def factorial(input: int) -> int:
         fact = 1
         for i in range(1, input + 1):
@@ -67,7 +105,7 @@ class MathOperations:
         return fact
     
     def taylor_exp(input: int) -> float:
-        e = 0
+        e = 0.0
         for i in range(10): # accuracy - keep the number even
             e += input**i/MathOperations.factorial(i)
         return e 
