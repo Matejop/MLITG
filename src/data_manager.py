@@ -5,11 +5,11 @@ and ``load_data_wrapper``.  In practice, ``load_data_wrapper`` is the
 function usually called by our neural network code.
 """
 
-from math_operations import MathOperations as MO
 from typing import Tuple, List
 import orjson
 import gzip
 import os
+import math
 
 DATA_PATH = os.path.join("data", "mnist_preprocessed.gz")
 
@@ -31,18 +31,24 @@ class DataManager:
         ))
         return (training_data, validation_data, test_data)
     
-    def make_batches(training_data: List[Tuple[List[float], int]], batch_size: int) -> List[List[Tuple[List[float], int]]]:
+    def make_batches(training_data: List[Tuple[List[float], int]], batch_size: int) -> Tuple[List[List[Tuple[List[float], int]]]]:
         if batch_size < 1:
             print("Batch size incorrectly defined - batches not created")
+            print(len(training_data))
             print(batch_size)
             return []
-        batch_count = MO.round(len(training_data) / batch_size)
-        batched_data = []
+        batch_count = math.ceil(len(training_data) / batch_size) 
+        if batch_count == 0:
+            print("Amount of training data too small for selected batch size - batches not created")
+            print(len(training_data))
+            print(batch_size)
+            return []
+        batches = []
         for i in range(batch_count):
             slice_start = i * batch_size
             slice_end = (i + 1) * batch_size
             if slice_end > len(training_data):
                 slice_end = len(training_data)
-            batched_data.append((training_data[slice_start:slice_end]))
-        return batched_data
+            batches.append((training_data[slice_start:slice_end]))
+        return batches
                 
