@@ -1,75 +1,192 @@
-from forward_pass import forward_pass as fp
-from infrastructure.file_manager import FileManager as fm
-import numpy as np
+from Utils.operations import Operations, ACTIVATION_FUNCTIONS
+from datetime import datetime as Date
+from typing import List
+from copy import deepcopy
+import hashlib
+import orjson
+import random as rnd
+import math
+import os
 
-class model:    
-    def __init__(self):
-        self.weights_vector = []
-        self.weights_matrix = []
-        self.biases_vector = []
-        self.biases_matrix = []
-        self.layer_sizes = []
-        self.init()
+#TODO add important parameters/constants to global config
 
-    def init(self):
-        INPUT_SIZE = 729
-        OUTPUT_SIZE = 10
-        layer_sizes = []
-    
-        layer_sizes.append(INPUT_SIZE)
-        layer_sizes.extend(self.inputLayers())
-        layer_sizes.append(OUTPUT_SIZE)
-    
-        weights_vector, weights_matrix, biases_vector, biases_matrix = self.createWeightsAndBiases(layer_sizes)
-        self.weights_vector = weights_vector
-        self.weights_matrix = weights_matrix
-        self.biases_vector = biases_vector
-        self.biases_matrix = biases_matrix
-        self.layer_sizes = layer_sizes
+MODEL_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "..\\models")
 
-    def inputLayers(self):
-        layer_sizes = []
-        i = 0
-        while True:
-            print(f"How many nodes should layer {i+1} have?")
-            inputed_layer = input()
-            if inputed_layer.isnumeric():
-                if int(inputed_layer) > 0:
-                    i += 1
-                    layer_sizes.append(int(inputed_layer))
-                else:
+class Model():    
+    def __init__(self, dimensions: List[int], activation: str, epochs: int, batch_size: int, learning_rate: float):
+        try:
+            found = False
+            for a in ACTIVATION_FUNCTIONS:
+                if a == activation:
+                    found = True
                     break
+            if found == False:
+                error_message = f"Inputed activation is not supported. Inputed epochs: {activation}\nSupported activations are:"
+                for a in ACTIVATION_FUNCTIONS:
+                    error_message += f" {a}"
+                raise Exception(error_message) 
+            if type(epochs) != int:
+                raise Exception(f"Epochs must be an int. Inputed epochs: {epochs}, Type: {type(epochs)}") 
+            elif epochs < 1:
+                raise Exception(f"Epochs must be larger than 0. Inputed epochs: {epochs}") 
+            if type(batch_size) != int:
+                raise Exception(f"Batch size must be an int. Inputed batch_size: {batch_size}, Type: {type(batch_size)}")
+            elif batch_size < 1:
+                raise Exception(f"Batch size must be larger than 0. Inputed batch_size: {batch_size}")
+            if type(learning_rate) != float:
+                raise Exception(f"Leaning rate  must be either a float or an int. Inputed learning_rate: {learning_rate}, Type: {type(batch_size)}")
+            elif learning_rate < 0:
+                raise Exception(f"Learning rate must be larger than 0. Inputed learning_rate: {batch_size}")
+            
+            time_now = Date.now().__str__()
+            self.id = hashlib.md5(f"{"ITG"}+{time_now}".encode()).hexdigest()
+            self.created_at = time_now     
+            self.path = None  
+            self.dimensions = dimensions
+            self.activation = activation
+            self.epochs = epochs
+            self.batch_size = batch_size
+            self.learning_rate = learning_rate
+            self.biases = None
+            self.weights = None
+        except Exception as e:
+            raise Exception(f"An exception occured while creating a model: Exception: {e}")
+    
+    def train(self, x: List[List[float]], y: List[List[int]]):
+        try:
+            if len(x) != len(y):
+                raise Exception(f"Inputed X\'s ans Y\'s have mismatching lengths. Length of X\'s: {len(x)} Length of Y\'s: {len(x)}")
+            rnd.seed("0")
+            self.biases = []
+            self.weights = []
+            #inializing parameters
+            for i in range(1, len(self.dimensions)):
+                self.biases.append([])
+                self.weights.append([])    
+                #xavier initialization        
+                limit = math.sqrt(6 / (self.dimensions[i - 1] + self.dimensions[i]))   
+                for j in range(self.dimensions[i - 1]):                                     
+                    self.weights[i - 1].append([])
+                    for _ in range(self.dimensions[i]):                                       
+                        self.weights[i - 1][j].append(rnd.uniform(-limit, limit))
+                for j in range(self.dimensions[i]):
+                    self.biases[i - 1].append(rnd.uniform(-limit, limit))   
+            #making batches for training
+            batch_count = math.ceil(len(x) / self.batch_size) 
+            if batch_count == 0:
+                batch_count = 1
+            batches = []
+            for i in range(batch_count):
+                slice_start = i * self.batch_size
+                slice_end = (i + 1) * self.batch_size
+                if slice_end > len(x):
+                    slice_end = len(x)
+                batch = []
+                for j in range(slice_start, slice_end):
+                    batch.append((x[j], y[j]))
+                batches.append(batch)  
+            #training
+            for epoch in range(self.epochs):                       
+                loss_avg = 0.0   
+                for i, batch in enumerate(batches):                 
+                    for j, datum in enumerate(batch): 
+                        activations = self.__forward(datum[0])  
+                        answer = max(datum[1])
+                        self.__backward(activations, datum[1].index(answer))             
+                        loss_avg += Operations.cross_entropy(activations[-1], datum[1].index(answer))
+                print(f"Epoch: {epoch + 1}\nAverage loss: {loss_avg / len(x)}")
+        except Exception as e:
+            raise Exception(f"An exception occured while a training a model: Model id: {self.id}. Exception: {e}")
+        
+    def classify(self, activations: List[float], layer_index: int = 0) -> List[float]:
+        """
+        Function for classification
+        activations is th input layer
+        Always call without setting layer_index, this is a recursive function
+        """
+        try:
+            if len(activations) != self.dimensions[layer_index]:
+                raise Exception(f"Input has mismatching length. Length of input: {len(activations)}. Size of dimension {layer_index}: {self.dimensions[layer_index]}")
+            zeds = Operations.vector_addition(Operations.vector_matrix_product(activations, self.weights[layer_index]), self.biases[layer_index])
+            if layer_index < len(self.weights) - 1:
+                layer_index += 1
+                return self.classify([Operations.get_activation(x, self.activation) for x in zeds], layer_index)
             else:
-                print("Please enter a valid positive integer or 0 to stop.")
+                return Operations.softmax(zeds)
+        except Exception as e:
+            Exception(f"An exception occured while a model was classifying: Model id: {self.id}. Input: {activations}. Exception: {e}")      
 
-        print("layer_sizes:", layer_sizes)
-        return layer_sizes
+    #infrastructure
 
-    def createWeightsAndBiases(self, layers):
-        weights_vectored = []
-        biases_vectored = []
-        weights_matrixed = []
-        biases_matrixed = []
+    def __forward(self, input) -> List[List[float]]:
+        #getting activations by passing forward
+        activations = []
+        activations.append(input) 
+        for l in range(len(self.weights)):
+            zeds = Operations.vector_addition(
+                Operations.vector_matrix_product(
+                    activations[l], 
+                    self.weights[l]), 
+                self.biases[l]
+            )
+            if l < len(self.weights) - 1:
+                activations.append([Operations.get_activation(x, self.activation) for x in zeds])
+            else:
+                activations.append(Operations.softmax(zeds))
+        return activations
     
-        for i in range(len(layers) - 1):
-            input_size = layers[i]
-            output_size = layers[i + 1]
-            weight_matrix = np.random.uniform(-1, 1, (input_size, output_size))
-            bias_matrix = np.zeros(output_size)
+    def __backward(self, activations: List[List[float]], answer_index: List[int]):
+        #backpropagation - gradient descent
+        delta = deepcopy(activations[-1])
+        delta[answer_index] -= 1
+        for l in range(1, len(self.weights)):  
+            for i in range(len(self.biases[-l])):
+                self.biases[-l][i] -= delta[i] * self.learning_rate
+            for i, delta_element in enumerate(delta):
+                for j, activation in enumerate(activations[-(l + 1)]):
+                    self.weights[-l][j][i] -= delta_element * activation * self.learning_rate
+            if l + 1 < len(self.weights):
+                delta = Operations.vector_matrix_product(delta, self.weights[-l], True)
+                delta = [
+                    delta[i] 
+                    * Operations.get_activation_derivative(activation, self.activation)
+                    for i, activation in enumerate(activations[-(l + 1)])
+                ]
+
+    def measure_accuracy(self, x: List[List[float]], y: List[List[int]]) -> float:
+        try:
+            if len(x) != len(y):
+                raise Exception(f"Inputed X\'s ans Y\'s have mismatching lengths. Length of X\'s: {len(x)}. Length of Y\'s: {len(x)}")
+            success = 0
+            for i in range(len(x)):
+                classification = self.classify(x[i])
+                if classification.index(max(classification)) == y[i].index(max(y[i])):
+                    success += 1
+            return success / len(x)
+        except Exception as e:
+            Exception(f"An exception occured while measuring accuracy of a model: Model id: {self.id}. Exception: {e}")
+
+    def save(self):
+        try:
+            path = os.path.join(MODEL_FOLDER_PATH, f"Model_{self.id[:10]}.json")
+            if os.path.exists(path) == True:
+                path = os.path.join(MODEL_FOLDER_PATH, f"Model{self.id}.json")
+            if os.path.exists(path) == True:
+                raise Exception(f"The path already exists")
+            self.path = path
+            os.makedirs(os.path.dirname(self.path))
+            with open(self.path, "w") as f:
+                f.write(orjson.dumps(
+                    self.__dict__, 
+                    option=orjson.OPT_INDENT_2).decode()
+                )
+        except Exception as e:
+            raise Exception(f"An exception occured while saving the model to path: Model id: {self.id}. Path: {path}. Exception: {e}")
     
-            weights_vectored.extend(weight_matrix.flatten())
-            biases_vectored.extend(bias_matrix)
-            weights_matrixed.append(weight_matrix)
-            biases_matrixed.append(bias_matrix)
-
-        return weights_vectored, weights_matrixed, biases_vectored, biases_matrixed
-
-if __name__ == "__main__":
-    model_instance = model()
-    structure, weights, biases = fm.load("./models/trained.model.json")
-
-    # Example call — replace with real MNIST input later
-    dummy_input = np.random.rand(4, 1)
-    result = fp(model_instance, dummy_input)
-
-    print("Forward pass result:", result)
+    def load(self, path: str):
+        try:
+            model_dict = dict(orjson.loads(open(path).read()))
+            self.__dict__ = model_dict
+        except Exception as e:
+            raise Exception(f"An exception occured while loading a model from path: Model id: {self.id}. Path: {path}. Exception: {e}")
+    
