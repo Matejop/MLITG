@@ -1,5 +1,6 @@
-__pycache__/
-src/__pycache__/
+src/MLL/__pycache__/
+src/MLL/utils/__pycache__/
+__pycache__
 *.pyc
 *.pyo
 *.pyd
@@ -7,6 +8,7 @@ src/__pycache__/
 *.tmp
 .DS_Store
 .env
-data/preprocessed/
 models/
-sessions/
+.vscode
+src/tests/MNIST/mnist_test.csv
+src/tests/MNIST/mnist_train.csv
