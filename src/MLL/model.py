@@ -18,6 +18,7 @@ class Model():
     - Configurable layer dimensions
     - Multiple activation functions
     - Mini-batch gradient descent training
+    - 
     - Cross-entropy loss with softmax output
 
     The model supports multiple training trials and selects the best-performing
@@ -170,13 +171,16 @@ class Model():
         limit = math.sqrt(6 / (self.dimensions[0] + self.dimensions[-1]))   
         for i in range(1, len(self.dimensions)):
             self.biases.append([])
-            self.weights.append([])  
+            self.weights.append([])    
+            #xavier initialization        
+            limit = math.sqrt(6 / (self.dimensions[i - 1] + self.dimensions[i]))   
             for j in range(self.dimensions[i - 1]):                                     
                 self.weights[i - 1].append([])
                 for _ in range(self.dimensions[i]):                                       
                     self.weights[i - 1][j].append(rnd.uniform(-limit, limit))
             for j in range(self.dimensions[i]):
-                self.biases[i - 1].append(rnd.uniform(-limit, limit)) 
+                bias_value = 0 if self.activation != "relu" else 0.01
+                self.biases[i - 1].append(bias_value) 
 
     def __train(self, batched_data: List[List[Tuple[List[int], List[float]]]]) -> float:
         loss = 0.0
