@@ -52,7 +52,7 @@ class Display:
 if __name__ == "__main__":    
     images = []
     data = []
-    with open("c:/Users/matej/source/MLITG/src/tests/MNIST_CSV/mnist_test.csv") as f:
+    with open("c:/Users/matej/source/MLITG/src/tests/MNIST/mnist_test.csv") as f:
         file = f.read()
         file_lines = file.split("\n")
         file_lines.pop()
