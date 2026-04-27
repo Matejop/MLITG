@@ -5,6 +5,8 @@ import gzip
 
 if __name__ == "__main__":
     data = orjson.loads(gzip.open("c:/Users/matej/source/MLITG/src/tests/MNIST/mnist_preprocessed.gz").read())
+    model_basic = Model.new([784, 256, 10], "relu", 2)
+    model_basic.fit(data["training_x"], data["training_y"])
     #training_x = []
     #training_y = []
     #with open("c:/Users/matej/source/MLITG/src/tests/MNIST/mnist_train.csv") as f:
@@ -35,7 +37,7 @@ if __name__ == "__main__":
     trainer = Trainer(
         activation="relu",
         max_depth=3,
-        trials=3,
+        trials=2,
         epochs=5,
         layer_size_start=256,
         layer_size_end=300,
@@ -44,6 +46,8 @@ if __name__ == "__main__":
         learning_rate_start=0.01,
         learning_rate_end=0.02,
     )
-    model = trainer.random_search(data["training_x"], data["training_y"], data["validation_x"], data["validation_y"], 3)
-    print(f"Accuracy:{model.measure_accuracy(data["testing_x"], data["testing_y"])}")
-    model.save("c:/Users/matej/source/MLITG/models/")
+    model_validated = trainer.random_search(data["training_x"], data["training_y"], data["validation_x"], data["validation_y"], 3)
+    print(f"Accuracy:{model_basic.measure_accuracy(data["testing_x"], data["testing_y"])}")
+    print(f"Accuracy:{model_validated.measure_accuracy(data["testing_x"], data["testing_y"])}")
+    model_basic.save("c:/Users/matej/source/MLITG/models/")
+    model_validated.save("c:/Users/matej/source/MLITG/models/")

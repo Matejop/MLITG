@@ -166,11 +166,11 @@ class Model():
         rnd.seed(self.seed)
         self.biases = []
         self.weights = []
+        #xavier initialization
+        limit = math.sqrt(6 / (self.dimensions[0] + self.dimensions[-1]))   
         for i in range(1, len(self.dimensions)):
             self.biases.append([])
-            self.weights.append([])    
-            #xavier initialization        
-            limit = math.sqrt(6 / (self.dimensions[i - 1] + self.dimensions[i]))   
+            self.weights.append([])  
             for j in range(self.dimensions[i - 1]):                                     
                 self.weights[i - 1].append([])
                 for _ in range(self.dimensions[i]):                                       

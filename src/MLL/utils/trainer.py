@@ -104,6 +104,7 @@ class Trainer():
                         dimensions = [] if Operations.try_parse(key_combination[-1]) == None else start_layers[:(int(key_combination[-1]) + 1)]
                         dimensions.insert(0, len(training_x[0])) #input dimension size
                         dimensions.append(len(training_y[0])) #output dimension size
+                    print(f"Configuration: {varied_values}")
                     while (True):
                         if best_accuracy == -1.0:                            
                             changes = False 
@@ -174,6 +175,7 @@ class Trainer():
                         dimensions.append(self.step[key])
             dimensions.insert(0, len(training_x[0])) #input dimension size
             dimensions.append(len(training_y[0])) #output dimension size
+            print(f"Configuration: {self.step}")
             model = Model.new(
                 dimensions, 
                 MLL.activation_functions[self.step["activation"]], 
