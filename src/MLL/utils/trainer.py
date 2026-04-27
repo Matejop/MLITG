@@ -9,6 +9,29 @@ import MLL
 #TODO exception raising and management
 
 class Trainer():
+    """
+    Utility class for hyperparameter optimization of Model instances.
+
+    Supports:
+    - Grid search
+    - Random search
+
+    The Trainer explores combinations of:
+    - Network depth and layer sizes
+    - Batch size
+    - Learning rate
+    - Activation function
+
+    Attributes:
+        max_depth (int): Maximum number of layers.
+        trials (int): Number of trials per configuration.
+        epochs (int): Number of epochs per training run.
+        keys (List[str]): Parameter keys used in search.
+        start (dict): Starting values for search parameters.
+        end (dict): Ending values for search parameters.
+        step (dict): Step sizes or sampled values.
+    """
+    
     def __init__(self, activation: str, max_depth: int, trials: int, epochs: int, layer_size_start: int, layer_size_end: int, batch_size_start: int, batch_size_end: int, learning_rate_start: float, learning_rate_end: int):
         exception = InputValidation.check_trainer_input(activation, max_depth, trials, epochs, layer_size_start, layer_size_end, batch_size_start, batch_size_end, learning_rate_start, learning_rate_end)
         if exception != "":
@@ -34,6 +57,27 @@ class Trainer():
             self.end[str(i)] = layer_size_end
 
     def grid_search(self, training_x: List[List[float]], training_y: List[List[float]], validation_x: List[List[float]], validation_y: List[List[float]], layer_size_step: int = 10, batch_size_step: int = 100, learning_rate_step: float = 0.001) -> Model:
+        """
+        Performs exhaustive grid search over hyperparameters.
+
+        Iterates through combinations of parameters and selects the model
+        with the highest validation accuracy.
+
+        Args:
+            training_x (List[List[float]]): Training inputs.
+            training_y (List[List[float]]): Training labels.
+            validation_x (List[List[float]]): Validation inputs.
+            validation_y (List[List[float]]): Validation labels.
+            layer_size_step (int): Step size for layer dimensions.
+            batch_size_step (int): Step size for batch size.
+            learning_rate_step (float): Step size for learning rate.
+
+        Returns:
+            Model: Best-performing model.
+
+        Raises:
+            Exception: If validation fails or training errors occur.
+        """
         try:  
             exception = InputValidation.check_gridsearch_input(training_x, training_y, validation_x, validation_y, layer_size_step, batch_size_step, learning_rate_step)
             if exception != "":
@@ -73,9 +117,7 @@ class Trainer():
                                     changes = True                        
                             if changes == False:
                                 break               
-                        model = Model.class_fit(
-                            training_x,
-                            training_y,
+                        model = Model.new(
                             dimensions, 
                             MLL.activation_functions[varied_values["activation"]], 
                             self.trials,
@@ -83,6 +125,7 @@ class Trainer():
                             varied_values["batch_size"], 
                             varied_values["learning_rate"]
                         )
+                        model.fit(training_x, training_y)
                         accuracy = model.measure_accuracy(validation_x, validation_y) 
                         if accuracy > best_accuracy:
                             best_accuracy = accuracy
@@ -93,6 +136,25 @@ class Trainer():
             raise Exception(f"An exception occured while creating a model with Trainer: Exception {e}")
     
     def random_search(self, training_x: List[List[float]], training_y: List[List[float]], validation_x: List[List[float]], validation_y: List[List[float]], iterations: int = 10) -> Model:
+        """
+        Performs random search over hyperparameters.
+
+        Randomly samples configurations within defined bounds and selects
+        the best-performing model based on validation accuracy.
+
+        Args:
+            training_x (List[List[float]]): Training inputs.
+            training_y (List[List[float]]): Training labels.
+            validation_x (List[List[float]]): Validation inputs.
+            validation_y (List[List[float]]): Validation labels.
+            iterations (int): Number of random configurations to test.
+
+        Returns:
+            Model: Best-performing model.
+
+        Raises:
+            Exception: If validation fails.
+        """
         validation_result = InputValidation.check_rndsearch_input(training_x, training_y, validation_x, validation_y, iterations)
         if validation_result != "":
             raise Exception(f"An exception occured while creating a model with Trainer: Exception {validation_result}")
@@ -112,9 +174,7 @@ class Trainer():
                         dimensions.append(self.step[key])
             dimensions.insert(0, len(training_x[0])) #input dimension size
             dimensions.append(len(training_y[0])) #output dimension size
-            model = Model.class_fit(
-                training_x,
-                training_y,
+            model = Model.new(
                 dimensions, 
                 MLL.activation_functions[self.step["activation"]], 
                 self.trials,
@@ -122,6 +182,7 @@ class Trainer():
                 self.step["batch_size"], 
                 self.step["learning_rate"]
             )
+            model.fit(training_x, training_y)
             accuracy = model.measure_accuracy(validation_x, validation_y) 
             if accuracy > best_accuracy:    
                 best_accuracy = accuracy

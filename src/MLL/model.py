@@ -11,6 +11,33 @@ import math
 import os
 
 class Model():   
+    """
+    Core neural network model used for training and classification.
+
+    This class implements a fully connected feedforward neural network with:
+    - Configurable layer dimensions
+    - Multiple activation functions
+    - Mini-batch gradient descent training
+    - Cross-entropy loss with softmax output
+
+    The model supports multiple training trials and selects the best-performing
+    parameters based on loss.
+
+    Attributes:
+        id (str): Unique identifier for the model.
+        created_at (str): Timestamp when the model was created.
+        path (str): File path where the model is saved.
+        dimensions (List[int]): Sizes of each layer (input → output).
+        activation (str): Activation function used in hidden layers.
+        trials (int): Number of training trials.
+        epochs (int): Number of epochs per trial.
+        batch_size (int): Number of samples per batch.
+        learning_rate (float): Gradient descent step size.
+        seed (str): Random seed used for initialization.
+        biases (List[List[float]]): Bias vectors for each layer.
+        weights (List[List[List[float]]]): Weight matrices for each layer.
+    """
+    
     def __init__(self):
         self.id = None
         self.created_at = None     
@@ -27,6 +54,23 @@ class Model():
 
     @classmethod
     def new(cls, dimensions: List[int], activation: str = "relu", trials: int = 3, epochs: int = 10, batch_size: int = 1000, learning_rate: float = 0.01):
+        """
+        Factory method to create a new Model instance with validated parameters.
+
+        Args:
+            dimensions (List[int]): Network architecture (input → hidden → output).
+            activation (str): Activation function for hidden layers.
+            trials (int): Number of independent training runs.
+            epochs (int): Number of epochs per trial.
+            batch_size (int): Size of training batches.
+            learning_rate (float): Learning rate for gradient descent.
+
+        Returns:
+            Model: Initialized model instance.
+
+        Raises:
+            Exception: If input validation fails.
+        """
         error_message = InputValidation.check_model_input(dimensions, activation, trials, epochs, batch_size, learning_rate)
         if error_message != "":
             raise Exception(f"An exception occured while creating a model: {error_message}")
@@ -43,6 +87,20 @@ class Model():
         return model
     
     def fit(self, x: List[List[float]], y: List[List[int]], seed: str = None):
+        """
+        Trains the model on the provided dataset.
+
+        Training is performed over multiple trials. The model retains the
+        weights and biases from the trial with the lowest loss.
+
+        Args:
+            x (List[List[float]]): Input features.
+            y (List[List[int]]): One-hot encoded labels.
+            seed (str, optional): Seed for reproducibility.
+
+        Raises:
+            Exception: If data is invalid or training fails.
+        """
         try:
             error_message = InputValidation.check_data_len(x, y)
             if error_message != "":
@@ -51,14 +109,14 @@ class Model():
             best_weights = []            
             smallest_loss = None
             batched_data = DataManager.batch_data(x, y, self.batch_size)
-            for trial in range(self.trials):
+            for trial in range(self.trials):                
+                print(f"Trial: {trial + 1}")
                 self.__initialize_parameters(seed)    
                 trial_loss = 0.0
                 for epoch in range(self.epochs):                       
                     epoch_loss = self.__train(batched_data)
-                    trial_loss += epoch_loss / len(x) 
+                    trial_loss = epoch_loss / len(x) 
                     print(f"Epoch: {epoch + 1}\nAverage loss: {epoch_loss / len(x)}")
-                print(f"Trial: {trial + 1}\nAverage loss: {trial_loss / self.epochs}")
                 if smallest_loss == None:
                     smallest_loss = trial_loss
                     best_biases = deepcopy(self.biases)
@@ -72,18 +130,22 @@ class Model():
         except Exception as e:
             raise Exception(f"An exception occured while fitting to data: Exception: {e}")
 
-    def class_fit(x: List[List[float]], y: List[List[int]], dimensions: List[int] = None, activation: str = "relu", trials: int = 3, epochs: int = 10, batch_size: int = 1000, learning_rate: float = 0.01, seed: str = None):
-        dimensions = dimensions if dimensions != None else [len(x[0]), len(y[0])]
-        model = Model.new(dimensions, activation, trials, epochs, batch_size, learning_rate)
-        print(f"Model training running. Assigned model id: {model.id}")
-        model.fit(x, y, seed)
-        return model
-
     def classify(self, activations: List[float], layer_index: int = 0) -> List[float]:
         """
-        Function for classification
-        activations is th input layer
-        Always call without setting layer_index, this is a recursive function
+        Performs forward propagation to classify a single input.
+
+        This method is recursive and should be called without specifying
+        `layer_index`.
+
+        Args:
+            activations (List[float]): Input feature vector.
+            layer_index (int): Internal recursion index.
+
+        Returns:
+            List[float]: Probability distribution over output classes.
+
+        Raises:
+            Exception: If input dimensions do not match model architecture.
         """
         try:
             if len(activations) != self.dimensions[layer_index]:
@@ -170,6 +232,19 @@ class Model():
                 ]
 
     def measure_accuracy(self, x: List[List[float]], y: List[List[int]]) -> float:
+        """
+        Evaluates model accuracy on a dataset.
+
+        Args:
+            x (List[List[float]]): Input features.
+            y (List[List[int]]): One-hot encoded labels.
+
+        Returns:
+            float: Accuracy score (0.0 to 1.0).
+
+        Raises:
+            Exception: If input data is invalid.
+        """
         try:
             error_message = InputValidation.check_data_len(x, y)
             if error_message != "":
@@ -197,6 +272,17 @@ class Model():
             raise Exception(f"An exception occured while measuring accuracy of a model: Model id: {self.id}. Exception: {e}")
 
     def save(self, path: str = None):
+        """
+        Saves the model to a JSON file.
+
+        If no path is set, a new file path is generated using the model ID.
+
+        Args:
+            path (str, optional): Directory where the model should be saved.
+
+        Raises:
+            Exception: If saving fails or file already exists.
+        """
         try:
             if self.path == None:   
                 model_path = os.path.join(path, f"Model_{self.id[:10]}.json")
@@ -217,6 +303,18 @@ class Model():
     
     @classmethod
     def load(cls, path: str):
+        """
+        Loads a model from a JSON file.
+
+        Args:
+            path (str): Path to the saved model file.
+
+        Returns:
+            Model: Reconstructed model instance.
+
+        Raises:
+            Exception: If loading fails.
+        """
         try:
             model_dict = dict(orjson.loads(open(path).read()))
             model = cls()
