@@ -45,16 +45,16 @@ class Model():
         self.path = None  
         self.dimensions = None
         self.activation = None
-        self.trials = None
-        self.epochs = None
         self.batch_size = None
         self.learning_rate = None
+        self.trials = None
+        self.epochs = None
         self.seed = None
         self.biases = None
         self.weights = None
 
     @classmethod
-    def new(cls, dimensions: List[int], activation: str = "relu", trials: int = 3, epochs: int = 10, batch_size: int = 1000, learning_rate: float = 0.01):
+    def new(cls, dimensions: List[int], activation: str = "relu", batch_size: int = 1000, learning_rate: float = 0.01):
         """
         Factory method to create a new Model instance with validated parameters.
 
@@ -62,7 +62,6 @@ class Model():
             dimensions (List[int]): Network architecture (input → hidden → output).
             activation (str): Activation function for hidden layers.
             trials (int): Number of independent training runs.
-            epochs (int): Number of epochs per trial.
             batch_size (int): Size of training batches.
             learning_rate (float): Learning rate for gradient descent.
 
@@ -72,7 +71,7 @@ class Model():
         Raises:
             Exception: If input validation fails.
         """
-        error_message = InputValidation.check_model_input(dimensions, activation, trials, epochs, batch_size, learning_rate)
+        error_message = InputValidation.check_model_input(dimensions, activation, batch_size, learning_rate)
         if error_message != "":
             raise Exception(f"An exception occured while creating a model: {error_message}")
         time_now = Date.now().__str__()
@@ -81,43 +80,59 @@ class Model():
         model.created_at = time_now     
         model.dimensions = dimensions
         model.activation = activation
-        model.trials = trials
-        model.epochs = epochs
         model.batch_size = batch_size
         model.learning_rate = learning_rate
         return model
     
-    def fit(self, x: List[List[float]], y: List[List[int]], seed: str = None):
+    def fit(self, training_x: List[List[float]], training_y: List[List[int]], trials: int, epochs: int = None, testing_x: List[List[float]] = None, testing_y: List[List[int]] = None, seed: str = None):
         """
         Trains the model on the provided dataset.
 
-        Training is performed over multiple trials. The model retains the
-        weights and biases from the trial with the lowest loss.
+        Training is performed over multiple trials. If validation dataset is provided. 
+        Model with the best accuracy is retained.
 
         Args:
-            x (List[List[float]]): Input features.
-            y (List[List[int]]): One-hot encoded labels.
-            seed (str, optional): Seed for reproducibility.
-
+            training_x (List[List[float]]): Input features for training.
+            training_y (List[List[int]]): One-hot encoded labels for training.
+            trials (int): Number of times to reinitialize parameters
+            validation_x (List[List[float]], optional): Input features for validation
+            validation_y (List[List[float]], optional): One-hot encoded labels features for validation
+            epochs (int, optional): Number of times to run through the dataset. If not set. Training continues until accuracy decreases
+            seed (str, optional): Seed for reproducibility. 
         Raises:
             Exception: If data is invalid or training fails.
         """
         try:
-            error_message = InputValidation.check_data_len(x, y)
+            error_message = InputValidation.check_data_len(training_x, training_y)
+            if testing_x != None and testing_y != None:
+                error_message = InputValidation.check_data_len(testing_x, testing_y)
             if error_message != "":
                 raise Exception(error_message)
             best_biases = []
-            best_weights = []            
+            best_weights = []         
             smallest_loss = None
-            batched_data = DataManager.batch_data(x, y, self.batch_size)
-            for trial in range(self.trials):                
+            batched_data = DataManager.batch_data(training_x, training_y, self.batch_size)
+            if self.weights == None and self.biases == None:
+                raise Exception("Model already has defined parameters")
+            self.trials = trials
+            for trial in range(trials):                
+                print(f"Trial: {trial + 1}")
+                self.__initialize_parameters(seed)
+                if epochs == None:
+                    epoch = 0
+                    while (True):
+                        epoch_loss = self.__train(batched_data)
+                        self.measure_accuracy()
+                        print(f"Epoch: {epoch + 1}\nAverage loss: {epoch_loss / len(training_x)}")
+                else:
+                    self.epochs = epochs
+                    for epoch in range(self.epochs):                       
+                        epoch_loss = self.__train(batched_data)
+                        print(f"Epoch: {epoch + 1}\nAverage loss: {epoch_loss / len(training_x)}")
+            for trial in range(trials):                
                 print(f"Trial: {trial + 1}")
                 self.__initialize_parameters(seed)    
-                trial_loss = 0.0
-                for epoch in range(self.epochs):                       
-                    epoch_loss = self.__train(batched_data)
-                    trial_loss = epoch_loss / len(x) 
-                    print(f"Epoch: {epoch + 1}\nAverage loss: {epoch_loss / len(x)}")
+                trial_loss = self.__train(batched_data, epochs)
                 if smallest_loss == None:
                     smallest_loss = trial_loss
                     best_biases = deepcopy(self.biases)
@@ -128,6 +143,8 @@ class Model():
                     best_weights = deepcopy(self.weights)
             self.biases = best_biases
             self.weights = best_weights
+                
+
         except Exception as e:
             raise Exception(f"An exception occured while fitting to data: Exception: {e}")
 
@@ -172,8 +189,6 @@ class Model():
         for i in range(1, len(self.dimensions)):
             self.biases.append([])
             self.weights.append([])    
-            #xavier initialization        
-            limit = math.sqrt(6 / (self.dimensions[i - 1] + self.dimensions[i]))   
             for j in range(self.dimensions[i - 1]):                                     
                 self.weights[i - 1].append([])
                 for _ in range(self.dimensions[i]):                                       
@@ -183,7 +198,7 @@ class Model():
                 self.biases[i - 1].append(bias_value) 
 
     def __train(self, batched_data: List[List[Tuple[List[int], List[float]]]]) -> float:
-        loss = 0.0
+        epoch_loss = 0.0            
         for batch in batched_data:                 
             for i, datum in enumerate(batch): 
                 if len(datum[0]) != self.dimensions[0]:
@@ -196,9 +211,9 @@ class Model():
                     if datum[1][j] == 1:
                         answer_index = j
                         break
-                loss += Operations.cross_entropy(activations[-1], answer_index)
-                self.__backward(activations, answer_index)    
-        return loss
+                epoch_loss += Operations.cross_entropy(activations[-1], answer_index)
+                self.__backward(activations, answer_index)
+        return epoch_loss
 
     def __forward(self, input) -> List[List[float]]:
         #getting activations by passing forward
@@ -275,28 +290,29 @@ class Model():
         except Exception as e:
             raise Exception(f"An exception occured while measuring accuracy of a model: Model id: {self.id}. Exception: {e}")
 
-    def save(self, path: str = None):
+    def save(self, exists_ok: bool = False, path: str = None):
         """
         Saves the model to a JSON file.
 
         If no path is set, a new file path is generated using the model ID.
 
         Args:
+            exists_ok (bool, optional): Whether or not does it matter whether the path already exists
             path (str, optional): Directory where the model should be saved.
 
         Raises:
             Exception: If saving fails or file already exists.
         """
         try:
-            if self.path == None:   
+            if path == None:   
                 model_path = os.path.join(path, f"Model_{self.id[:10]}.json")
-                print(model_path)
                 if os.path.exists(model_path) == True:
                     model_path = os.path.join(path, f"Model{self.id}.json")
-                if os.path.exists(model_path) == True:
-                    raise Exception(f"The inputed path already exists")
                 self.path = model_path
-            self.hash = hashlib.sha256(self).__str__()
+            else:
+                model_path = path
+            if os.path.exists(model_path) == True and exists_ok == False:
+                raise Exception(f"The inputed path already exists")
             with open(self.path, "w") as f:
                 f.write(orjson.dumps(
                     self.__dict__, 

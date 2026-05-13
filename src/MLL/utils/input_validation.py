@@ -16,7 +16,7 @@ class InputValidation():
         - Error message (str) if validation fails
     """
 
-    def check_model_input(dimensions: List[int], activation: str, trials: int, epochs: int, batch_size: int, learning_rate: float) -> str:
+    def check_model_input(dimensions: List[int], activation: str, batch_size: int, learning_rate: float) -> str:
         """
         Validates inputs used to initialize a Model.
 
@@ -32,12 +32,6 @@ class InputValidation():
         if error_message != "":
             return error_message
         error_message = InputValidation.check_activation(activation)
-        if error_message != "":
-            return error_message
-        error_message = InputValidation.check_boundary_int(trials, "Trials", 0)
-        if error_message != "":
-            return error_message
-        error_message = InputValidation.check_boundary_int(epochs, "Epochs", 0)
         if error_message != "":
             return error_message
         error_message = InputValidation.check_boundary_int(batch_size, "Batch size", 0)
